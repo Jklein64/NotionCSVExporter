@@ -2,11 +2,14 @@
     "name": "exporter",
     "version": "1.0.0",
     "description": "Export notion databases and add their page's markdown content as another column in the resulting .csv file.",
-    "main": "index.js",
-    "scripts": {},
+    "main": "index.ts",
+    "scripts": {
+        "start": "ts-node ."
+    },
     "author": "jklein64",
     "license": "GPL-3.0-only",
     "dependencies": {
-        "@notionhq/client": "^0.2.3"
+        "@notionhq/client": "^0.2.3",
+        "dotenv": "^10.0.0"
     }
 }
