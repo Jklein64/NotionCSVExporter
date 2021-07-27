@@ -4,12 +4,16 @@
     "description": "Export notion databases and add their page's markdown content as another column in the resulting .csv file.",
     "main": "index.ts",
     "scripts": {
-        "start": "ts-node ."
+        "start": "ts-node .",
+        "debug": "ts-node --inspect=5858 --debug-brk --ignore false ."
     },
     "author": "jklein64",
     "license": "GPL-3.0-only",
     "dependencies": {
         "@notionhq/client": "^0.2.3",
         "dotenv": "^10.0.0"
+    },
+    "devDependencies": {
+        "ts-node": "^10.1.0"
     }
 }
