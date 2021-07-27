@@ -21,11 +21,7 @@ void (async function () {
 
     // get a list of all the pages in the same sorted order (I hope) as the .csv
     const { results: pages } = await notion.databases.query({
-        database_id: DATABASE_ID,
-        sorts: [{
-            property: "Created",
-            direction: "descending"
-        }]
+        database_id: DATABASE_ID
     })
 
     // add each page's markdown to the csv array under the header "Comments"
