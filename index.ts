@@ -1,6 +1,10 @@
 import { Client } from "@notionhq/client"
-import { Block, PropertyValue } from "@notionhq/client/build/src/api-types"
+import NotionExporter from "notion-exporter"
 import dotenv from "dotenv"
+import parse from "csv-parse"
+import stringify from "csv-stringify"
+import fs from "fs"
+
 
 // set up .env variables
 dotenv.config()
@@ -9,7 +13,14 @@ const notion = new Client({ auth: process.env.NOTION_KEY })
 const DATABASE_ID = process.env.NOTION_DATABASE_ID
 
 void (async function () {
-    const response = await notion.databases.query({
+    const notionExporter = new NotionExporter(process.env.NOTION_TOKEN)
+
+    // get results of exporting as .csv
+    const csvString = await notionExporter.getCsvString(DATABASE_ID)
+    const csvArray = await parseCSV(csvString) as string[][]
+
+    // get a list of all the pages in the same sorted order (I hope) as the .csv
+    const { results: pages } = await notion.databases.query({
         database_id: DATABASE_ID,
         sorts: [{
             property: "Created",
@@ -17,100 +28,43 @@ void (async function () {
         }]
     })
 
-    const serialized = new Map<string, any[]>()
-
-    const pages = response.results
+    // add each page's markdown to the csv array under the header "Comments"
+    csvArray[0].push("Comments")
     for (const page of pages) {
-        const blocks = await getAllChildren(page.id)
-
-        serialized.has("Comments")
-            ? serialized.get("Comments").push(blocks)
-            : serialized.set("Comments", [blocks])
-        for (const [property, value] of Object.entries(page.properties)) {
-            serialized.has(property)
-                ? serialized.get(property).push(serializeProperty(value))
-                : serialized.set(property, [serializeProperty(value)])
-        }
+        const markdown = await notionExporter.getMdString(page.id)
+        const name = markdown.substring(2).substring(0, markdown.indexOf("\n")).trim()
+        const row = csvArray.find(row => row[0] === name)
+        row.push(markdown.substring(markdown.indexOf("---") + 3 + 2))
+        console.log(name)
     }
-    console.log(Object.fromEntries(serialized.entries()))
 
-})()
-
-async function getAllChildren(pageId: string) {
-    const blocks = await notion.blocks.children.list({
-        block_id: pageId // a page is a block, and a page's children is the first layer of its content
+    csvArray.forEach(row => {
+        // didn't push to it yet
+        if (row.length < csvArray[0].length - 1)
+            row.push("")
     })
 
-    // TODO do I need something recursive here?
-    return blocks.results
+    console.log(csvArray)
+    console.log("yeet")
+    fs.writeFile("./out.csv", await stringifyCSV(csvArray), {}, () => {
+        console.log("saved to out.csv!")
+    })
+})()
+
+async function parseCSV(data: string) {
+    return new Promise((resolve, reject) => {
+        parse(data, {}, (error, output) => {
+            if (error) reject(error.message)
+            else resolve(output)
+        })
+    })
 }
 
-function serializeBlock(block: Block): string | number | boolean {
-    switch (block.type) {
-        case "bulleted_list_item":
-            return block.bulleted_list_item.text.map(t => t.plain_text).join("")
-                + "\n"
-                + block.bulleted_list_item.children.map(c => `  ${serializeBlock(c)}`)
-        case
-    }
-}
-
-function serializeProperty(property: PropertyValue): string | number | boolean {
-    switch (property.type) {
-        case "checkbox":
-            return property.checkbox
-        case "created_by":
-            return property.created_by.name
-        case "created_time":
-            return property.created_time
-        case "date":
-            // TODO figure out this case
-            return property.date.start
-        case "email":
-            return property.email
-        case "files":
-            return property.files.join(", ")
-        case "formula":
-            switch (property.formula.type) {
-                case "boolean":
-                    return property.formula.boolean
-                case "date":
-                    // TODO figure out this case
-                    return property.formula.date.date.start
-                case "number":
-                    return property.formula.number
-                case "string":
-                    return property.formula.string
-            }
-        case "last_edited_by":
-            return property.last_edited_by.name
-        case "last_edited_time":
-            return property.last_edited_time
-        case "multi_select":
-            return property.multi_select.map(selectOption => selectOption.name).join(", ")
-        case "number":
-            return property.number
-        case "people":
-            return property.people.map(p => p.name).join(", ")
-        case "phone_number":
-            return property.phone_number
-        case "rich_text":
-            return property.rich_text.map(richText => richText.plain_text).join("")
-        case "rollup":
-            switch (property.rollup.type) {
-                case "array":
-                    return property.rollup.array.map(p => serializeProperty(p as any)).join(", ")
-                case "date":
-                    // TODO figure out this case
-                    return property.rollup.date.date.start
-                case "number":
-                    return property.rollup.number
-            }
-        case "select":
-            return property.select.name
-        case "title":
-            return property.title.map(richText => richText.plain_text).join(", ")
-        case "url":
-            return property.url
-    }
+async function stringifyCSV(data: string[][]): Promise<string> {
+    return new Promise((resolve, reject) => {
+        stringify(data, (error, output) => {
+            if (error) reject(error.message)
+            else resolve(output)
+        })
+    })
 }

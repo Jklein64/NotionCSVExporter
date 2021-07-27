@@ -11,7 +11,11 @@
     "license": "GPL-3.0-only",
     "dependencies": {
         "@notionhq/client": "^0.2.3",
-        "dotenv": "^10.0.0"
+        "csv": "^5.5.0",
+        "csv-parse": "^4.16.0",
+        "csv-stringify": "^5.6.2",
+        "dotenv": "^10.0.0",
+        "notion-exporter": "^0.1.2"
     },
     "devDependencies": {
         "ts-node": "^10.1.0"
