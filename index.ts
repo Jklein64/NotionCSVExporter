@@ -8,10 +8,17 @@ const notion = new Client({ auth: process.env.NOTION_KEY })
 const DATABASE_ID = process.env.NOTION_DATABASE_ID
 
 void (async function () {
-    const response = await notion.databases.retrieve({
-        database_id: DATABASE_ID
+    const response = await notion.databases.query({
+        database_id: DATABASE_ID,
+        sorts: [{
+            property: "Created",
+            direction: "descending"
+        }]
     })
-    console.log(response)
-})()
 
-export { }
+    const pages = response.results
+
+    const first = pages[0]
+
+    console.log(first)
+})()
