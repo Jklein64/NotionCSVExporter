@@ -35,7 +35,6 @@ void (async function () {
         const name = markdown.substring(2).substring(0, markdown.indexOf("\n")).trim()
         const row = csvArray.find(row => row[0] === name)
         row.push(markdown.substring(markdown.indexOf("---") + 3 + 2))
-        console.log(name)
     }
 
     csvArray.forEach(row => {
@@ -44,8 +43,6 @@ void (async function () {
             row.push("")
     })
 
-    console.log(csvArray)
-    console.log("yeet")
     fs.writeFile("./out.csv", await stringifyCSV(csvArray), {}, () => {
         console.log("saved to out.csv!")
     })
