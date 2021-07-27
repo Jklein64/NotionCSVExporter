@@ -5,5 +5,8 @@
     "main": "index.js",
     "scripts": {},
     "author": "jklein64",
-    "license": "GPL-3.0-only"
+    "license": "GPL-3.0-only",
+    "dependencies": {
+        "@notionhq/client": "^0.2.3"
+    }
 }
